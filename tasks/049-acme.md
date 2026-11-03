@@ -12,19 +12,20 @@ challenges itself through a chooser, and served the renewed one without a restar
 (2026-10-22, run by hand, not committed). Its chooser read the challenges and the
 served certificate from files that the ACME flow wrote, which is enough for a test.
 
+goose-acme `v0.0.5` has the glue (2026-11-03): its module `acme.serve` runs the ACME
+flow on a lane and keeps a chooser per worker that the lane feeds by mail, so
+`tls_hello` takes a challenge context or a renewed certificate at the next hello. Its
+`test/live/serve.goose` gets and renews certificates from Pebble through a goose-http
+server without a restart. It needs goose-http `v0.5.17`, which hands `tls_hello` the
+chooser by reference so its changes last. goose-acme `v0.0.5` imports goose-http
+`v0.5.17` and goose-tls `v0.0.6`.
+
 What remains:
 
-- The glue a program needs, in goose-acme or a goose-rest example: the ACME flow on a
-  lane, and a chooser per worker that the lane feeds by mail, so `tls_hello` takes a
-  challenge context or a renewed certificate at the next hello
-  (goose-http's `docs/api.md`, "HTTPS").
-- A committed Pebble run through a goose-rest server, as goose-acme's
-  `scripts/pebble.sh` runs one through a Python server. Pebble builds with Go and runs
-  natively; it needs no Docker.
+- `rest.tls` serving with `acme.serve`'s chooser, and a committed Pebble run through a
+  goose-rest server, as goose-acme's `test/live/serve.goose` runs one through goose-http.
 - A whole certificate from Let's Encrypt's staging service, from a host that port 443
   of a public name reaches.
-- goose-acme's imports moved to goose-http `v0.5.3`; `v0.0.3` declares `v0.5.2`, which
-  a program on `v0.5.3` builds with a warning.
 
 A Goose server gets and renews its certificates from Let's Encrypt in the process, so one
 binary can face the internet without Caddy or nginx (task 047, "Beyond HttpArena: one
@@ -85,7 +86,8 @@ and the HTTP-01 and DNS-01 challenges.
       chooser (goose-http `v0.5.3`, goose-rest `v0.3.3`, 2026-10-22)
 - [ ] A certificate issued by a local Pebble to a goose-rest test server, and renewed
       while it serves, without a restart, in a committed script. Done once by hand
-      (2026-10-22); the chooser fed by mail remains
+      (2026-10-22); goose-acme `v0.0.5`'s `acme.serve` does it for a goose-http server
+      (2026-11-03), and `rest.tls` with that chooser remains
 - [ ] The same against Let's Encrypt's staging service, for a public name. The flow
       reached it by name, created an account, and was refused an order for
       `example.com` by policy (2026-10-22); a whole certificate needs a public host
